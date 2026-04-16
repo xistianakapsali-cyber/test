@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YIOLO Ultimate Database 2026</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #e50914; --bg: #0a0a0a; --card: #141414; 
+            --text: #ffffff; --border: #222; --gold: #ffc107;
+            --input-bg: #1a1a1a; --modal-overlay: rgba(0,0,0,0.95);
+        }
+        [data-theme="light"] {
+            --bg: #f5f5f5; --card: #ffffff; --text: #1a1a1a; 
+            --border: #ddd; --input-bg: #eeeeee; --modal-overlay: rgba(255,255,255,0.95);
+        }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; overflow-x: hidden; }
+        header { padding: 15px 5%; background: var(--card); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); }
+        .logo { color: var(--primary); font-weight: 800; font-size: 24px; letter-spacing: 1px; }
+        .header-controls { display: flex; align-items: center; gap: 15px; }
+        .theme-btn { background: var(--primary); color: white; border: none; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        #movieCount { font-size: 11px; background: var(--input-bg); padding: 5px 12px; border-radius: 15px; border: 1px solid var(--border); color: #888; }
+        
+        .search-section { padding: 30px 5% 10px; text-align: center; }
+        #movieSearch { width: 100%; max-width: 600px; padding: 14px 25px; border-radius: 30px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); outline: none; font-size: 16px; box-sizing: border-box; }
+        
+        .categories { display: flex; justify-content: center; gap: 10px; padding: 10px 5% 30px; flex-wrap: wrap; }
+        .cat-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: 0.3s; outline: none; }
+        .cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; padding: 0 5% 50px; }
+        .movie-card { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); transition: 0.3s ease; position: relative; cursor: pointer; display: flex; flex-direction: column; }
+        .movie-card:hover { transform: translateY(-8px); border-color: var(--primary); }
+        .img-container { position: relative; overflow: hidden; aspect-ratio: 2/3; background: #1a1a1a; }
+        .movie-card img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+        
+        .quality-tag { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; font-size: 9px; font-weight: bold; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--primary); z-index: 10; }
+        .wishlist-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); border: none; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; z-index: 11; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .wishlist-btn.active { background: var(--primary); }
+        
+        .info { padding: 15px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .info h3 { font-size: 13px; margin: 0 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); font-weight: 700; }
+        .stars { color: var(--gold); font-size: 10px; margin-bottom: 10px; }
+        .play-btn { background: var(--primary); color: white; text-decoration: none; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: bold; display: block; text-align: center; }
+
+        #detailModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: var(--modal-overlay); z-index:4000; align-items:center; justify-content:center; backdrop-filter: blur(10px); }
+        .modal-box { background:var(--card); width:95%; max-width:800px; border-radius:24px; position:relative; border:1px solid var(--border); overflow:hidden; display: flex; flex-direction: row; animation: slideUp 0.3s ease; }
+        .modal-poster { width: 40%; object-fit: cover; min-height: 450px; background: #000; }
+        .modal-info { padding: 35px; width: 60%; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; overflow-y: auto; }
+        .modal-info h2 { margin: 0; color: var(--primary); font-size: 28px; }
+        .info-label { color: var(--primary); font-weight: 800; font-size: 12px; text-transform: uppercase; margin-right: 5px; }
+        .info-value { font-size: 14px; opacity: 0.9; }
+        .modal-desc { font-size: 14px; line-height: 1.6; opacity: 0.8; text-align: justify; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 5px; }
+
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @media (max-width: 750px) { .modal-box { flex-direction: column; max-height: 90vh; } .modal-poster { width: 100%; min-height: 200px; } .modal-info { width: 100%; padding: 20px; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">YIOLO</div>
+    <div class="header-controls">
+        <button class="theme-btn" onclick="toggleTheme()">🌓 ΘΕΜΑ</button>
+        <div id="movieCount">Σύνολο: 0</div>
+    </div>
+</header>
+
+<div class="search-section">
+    <input type="text" id="movieSearch" placeholder="Ταινία, ηθοποιός, σκηνοθέτης..." onkeyup="applyFilters()">
+</div>
+
+<div class="categories">
+    <button class="cat-btn active" onclick="handleCategory('All')">Όλα</button>
+    <button class="cat-btn" onclick="handleCategory('Δράμα')">Δράμα</button>
+    <button class="cat-btn" onclick="handleCategory('Action')">Action</button>
+    <button class="cat-btn" onclick="handleCategory('Εγκλήματος')">Crime</button>
+    <button class="cat-btn" onclick="showFavorites()" style="color: #e50914; border-color: #e50914;">❤️ Liked</button>
+</div>
+
+<div class="movie-grid" id="movieGrid"></div>
+
+<div id="detailModal">
+    <div class="modal-box">
+        <button onclick="closeDetails()" style="position:absolute; top:15px; right:15px; background:rgba(0,0,0,0.5); border:none; color:white; font-size:24px; cursor:pointer; width:40px; height:40px; border-radius:50%; z-index:10;">&times;</button>
+        <img id="modalImg" class="modal-poster" src="">
+        <div class="modal-info">
+            <h2 id="modalTitle"></h2>
+            <div id="modalStars" style="color:var(--gold); font-size:14px;"></div>
+            <div><span class="info-label">Ηθοποιοί:</span><span id="modalActors" class="info-value"></span></div>
+            <div><span class="info-label">Σκηνοθέτης:</span><span id="modalDirector" class="info-value"></span></div>
+            <div><span class="info-label">Studio:</span><span id="modalStudio" class="info-value"></span></div>
+            <div><span class="info-label">Παραγωγή:</span><span id="modalProd" class="info-value"></span></div>
+            <div><span class="info-label">Πληροφορίες:</span><span id="modalMeta" class="info-value"></span></div>
+            <div id="modalDesc" class="modal-desc"></div>
+            <div style="margin-top:auto;"><a id="modalLink" href="#" class="play-btn" style="padding: 12px;">ΠΡΟΒΟΛΗ ΤΩΡΑ</a></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const movies = [
+        { 
+            title: "Gladiator", title_el: "Ο Μονομάχος", year: 2000, country: "USA", genre: "Action, Δράμα", quality: "HD", rating: 5, 
+            actors: "Russell Crowe, Joaquin Phoenix, Connie Nielsen", director: "Ridley Scott", studio: "DreamWorks Pictures", production: "Universal Pictures",
+            poster: "gladiator.jpg", link: "movies/gladiator.mp4", desc: "Ένας ένδοξος Ρωμαίος στρατηγός προδίδεται από τον διεφθαρμένο γιο του αυτοκράτορα. Στέλνεται στη σκλαβιά και γίνεται μονομάχος για να πάρει την εκδίκησή του στο Κολοσσαίο." 
+        },
+        { 
+            title: "1883", title_el: "1883", year: 2021, country: "USA", genre: "Δράμα, Western", quality: "HD", rating: 5, 
+            actors: "Sam Elliott, Tim McGraw, Faith Hill", director: "Taylor Sheridan", studio: "Paramount+", production: "MTV Entertainment",
+            poster: "1883.jpg", link: "movies/1883.mp4", desc: "Το επικό prequel του Yellowstone ακολουθεί την οικογένεια Dutton σε ένα επικίνδυνο ταξίδι προς τη Δύση μέσα από τις Μεγάλες Πεδιάδες." 
+        },
+        { 
+            title: "1899", title_el: "1899", year: 2022, country: "Germany", genre: "Μυστηρίου, Δράμα", quality: "HD", rating: 4, 
+            actors: "Emily Beecham, Andreas Pietschmann, Aneurin Barnard", director: "Baran bo Odar", studio: "Netflix", production: "Dark Ways",
+            poster: "1899.jpg", link: "movies/1899.mp4", desc: "Ένα πλοίο με μετανάστες συναντά ένα άλλο πλοίο που αγνοούνταν για μήνες, ξεκινώντας ένα εφιαλτικό μυστήριο." 
+        },
+        { 
+            title: "1923", title_el: "1923", year: 2022, country: "USA", genre: "Δράμα, Western", quality: "HD", rating: 5, 
+            actors: "Harrison Ford, Helen Mirren, Brandon Sklenar", director: "Taylor Sheridan", studio: "Paramount+", production: "101 Studios",
+            poster: "1923.jpg", link: "movies/1923.mp4", desc: "Η νέα γενιά των Dutton αντιμετωπίζει τις προκλήσεις των αρχών του 20ου αιώνα, συμπεριλαμβανομένης της ποτοαπαγόρευσης και της Μεγάλης Ύφεσης." 
+        },
+        { 
+            title: "Alaska Daily", title_el: "Alaska Daily", year: 2022, country: "USA", genre: "Δράμα, Εγκλήματος", quality: "HD", rating: 4, 
+            actors: "Hilary Swank, Jeff Perry, Grace Dove", director: "Tom McCarthy", studio: "ABC", production: "20th Television",
+            poster: "Alaska_Daily.jpg", link: "movies/alaska_daily.mp4", desc: "Μια δημοσιογράφος από τη Νέα Υόρκη μετακομίζει στην Αλάσκα για να ξεκινήσει από την αρχή και ερευνά μια σειρά από μυστηριώδεις εξαφανίσεις γυναικών." 
+        },
+        { 
+            title: "American Horror Stories", title_el: "Ιστορίες Τρόμου", year: 2021, country: "USA", genre: "Δράμα, Μυστηρίου", quality: "HD", rating: 4, 
+            actors: "Sierra McCormick, Paris Jackson, Kaia Gerber", director: "Loni Peristere", studio: "FX on Hulu", production: "Ryan Murphy Productions",
+            poster: "AHS.jpg", link: "movies/ahs.mp4", desc: "Σειρά ανθολογίας που εξερευνά διαφορετικούς τρόμους και αστικούς θρύλους σε κάθε αυτοτελές επεισόδιο." 
+        },
+        { 
+            title: "Χίλια Χτυπήματα", title_el: "Thousand Blows", year: 2025, country: "UK", genre: "Δράμα", quality: "HD", rating: 5, 
+            actors: "Stephen Graham, Erin Doherty, Malachi Kirby", director: "Steven Knight", studio: "Disney+", production: "Matriarch Productions",
+            poster: "1000Blows.jpg", link: "movies/thousand_blows.mp4", desc: "Στον σκοτεινό κόσμο της βικτωριανής πυγμαχίας στο Λονδίνο, δύο φίλοι από την Τζαμάικα παλεύουν για την επιβίωση." 
+        },
+        { 
+            title: "Άννα με Α", title_el: "Anne with an E", year: 2017, country: "Canada", genre: "Δράμα", quality: "HD", rating: 5, 
+            actors: "Amybeth McNulty, Geraldine James, R.H. Thomson", director: "Moira Walley-Beckett", studio: "Netflix", production: "Northwood Entertainment",
+            poster: "Anne.jpg", link: "movies/anne_with_an_e.mp4", desc: "Η ιστορία μιας ορφανής κοπέλας με αστείρευτη φαντασία που αλλάζει τις ζωές των ανθρώπων σε μια μικρή πόλη του Καναδά." 
+        },
+        { 
+            title: "Around the World in 80 Days", title_el: "Ο Γύρος του Κόσμου", year: 2021, country: "UK", genre: "Δράμα", quality: "HD", rating: 4, 
+            actors: "David Tennant, Ibrahim Koma, Leonie Benesch", director: "Steve Barron", studio: "BBC", production: "Slim Film + TV",
+            poster: "80days.jpg", link: "movies/80days.mp4", desc: "Ο Φιλέας Φογκ στοιχηματίζει την περιουσία του ότι μπορεί να κάνει τον γύρο του κόσμου σε μόλις 80 ημέρες." 
+        },
+        { 
+            title: "Avatar", title_el: "Άβαταρ", year: 2024, country: "USA", genre: "Δράμα, Action", quality: "HD", rating: 5, 
+            actors: "Gordon Cormier, Kiawentiio, Ian Ousley", director: "Albert Kim", studio: "Netflix", production: "Rideback",
+            poster: "Avatar.jpg", link: "movies/avatar.mp4", desc: "Ο νεαρός Άανγκ, ο τελευταίος Άβαταρ, πρέπει να μάθει να δαμάζει τα τέσσερα στοιχεία της φύσης για να σταματήσει τον πόλεμο." 
+        },
+        { 
+            title: "Balthazar", title_el: "Μπαλταζάρ", year: 2018, country: "France", genre: "Εγκλήματος", quality: "HD", rating: 4, 
+            actors: "Tomer Sisley, Hélène de Fougerolles, Yannig Samot", director: "Clothilde Jamin", studio: "TF1", production: "Beaubourg Audiovisuel",
+            poster: "Balthazar.jpg", link: "movies/balthazar.mp4", desc: "Ένας ιδιοφυής αλλά εκκεντρικός ιατροδικαστής στο Παρίσι βοηθά την αστυνομία να λύσει τις πιο περίπλοκες υποθέσεις δολοφονίας." 
+        },
+        { 
+            title: "Beef", title_el: "Beef", year: 2023, country: "USA", genre: "Δράμα, Κωμωδία", quality: "HD", rating: 5, 
+            actors: "Steven Yeun, Ali Wong, Joseph Lee", director: "Lee Sung Jin", studio: "Netflix", production: "A24",
+            poster: "Beef.jpg", link: "movies/beef.mp4", desc: "Ένα περιστατικό οδικής οργής ανάμεσα σε δύο αγνώστους πυροδοτεί μια κόντρα που σταδιακά καταστρέφει τις ζωές και των δύο." 
+        },
+        { 
+            title: "Blue Lights", title_el: "Blue Lights", year: 2023, country: "UK", genre: "Εγκλήματος", quality: "HD", rating: 4, 
+            actors: "Siân Brooke, Martin McCann, Katherine Devlin", director: "Declan Lawn", studio: "BBC", production: "Two Cities TV",
+            poster: "BlueLights.jpg", link: "movies/blue_lights.mp4", desc: "Η καθημερινότητα των νέων αστυνομικών στο Μπέλφαστ, όπου οι προκλήσεις της δουλειάς συνδυάζονται με τους κινδύνους." 
+        },
+        { 
+            title: "Cobra Kai", title_el: "Κόμπρα Κάι", year: 2018, country: "USA", genre: "Δράμα, Action", quality: "HD", rating: 5, 
+            actors: "Ralph Macchio, William Zabka, Xolo Maridueña", director: "Josh Heald", studio: "Netflix", production: "Sony Pictures TV",
+            poster: "CobraKai.jpg", link: "movies/cobra_kai.mp4", desc: "Τριάντα χρόνια μετά το Karate Kid, η αντιπαλότητα του Ντάνιελ και του Τζόνι αναβιώνει μέσα από τις νέες γενιές." 
+        },
+        { 
+            title: "Dahmer", title_el: "Ντάμερ", year: 2022, country: "USA", genre: "Εγκλήματος, Δράμα", quality: "HD", rating: 5, 
+            actors: "Evan Peters, Richard Jenkins, Niecy Nash", director: "Ryan Murphy", studio: "Netflix", production: "Ryan Murphy Productions",
+            poster: "Dahmer.jpg", link: "movies/dahmer.mp4", desc: "Η ανατριχιαστική ιστορία του Jeffrey Dahmer, ενός από τους πιο διαβόητους δολοφόνους, μέσα από την οπτική των θυμάτων." 
+        },
+        { 
+            title: "Dark", title_el: "Σκοτάδι", year: 2017, country: "Germany", genre: "Μυστηρίου", quality: "HD", rating: 5, 
+            actors: "Louis Hofmann, Karoline Eichhorn, Lisa Vicari", director: "Baran bo Odar", studio: "Netflix", production: "Dark Ways",
+            poster: "Dark.jpg", link: "movies/dark.mp4", desc: "Η εξαφάνιση δύο παιδιών αποκαλύπτει τα μυστικά τεσσάρων οικογενειών και μια συνωμοσία ταξιδιού στο χρόνο." 
+        },
+        { 
+            title: "Game of Thrones", title_el: "GOT", year: 2011, country: "USA", genre: "Δράμα", quality: "HD", rating: 5, 
+            actors: "Emilia Clarke, Kit Harington, Peter Dinklage", director: "David Benioff", studio: "HBO", production: "Warner Bros",
+            poster: "GOT.jpg", link: "movies/got.mp4", desc: "Ευγενείς οικογένειες μάχονται για τον έλεγχο του Σιδερένιου Θρόνου στο Γουέστερος, ενώ μια αρχαία απειλή ξυπνά στον Βορρά." 
+        },
+        { 
+            title: "Harrow", title_el: "Harrow", year: 2018, country: "Australia", genre: "Εγκλήματος", quality: "HD", rating: 4, 
+            actors: "Ioan Gruffudd, Mirrah Foulkes, Remy Hii", director: "Stephen M. Irwin", studio: "ABC", production: "Hoodlum",
+            poster: "Harrow.jpg", link: "movies/harrow.mp4", desc: "Ένας λαμπρός ιατροδικαστής με πλήρη έλλειψη σεβασμού προς την εξουσία λύνει υποθέσεις ενώ κρύβει ένα δικό του μυστικό." 
+        },
+        { 
+            title: "His Dark Materials", title_el: "His Dark Materials", year: 2019, country: "UK", genre: "Δράμα", quality: "HD", rating: 4, 
+            actors: "Dafne Keen, Kit Connor, Ruth Wilson", director: "Tom Hooper", studio: "HBO", production: "New Line Cinema",
+            poster: "HDM.jpg", link: "movies/hdm.mp4", desc: "Σε έναν παράλληλο κόσμο, μια νεαρή κοπέλα ανακαλύπτει μια σκοτεινή συνωμοσία που αφορά κλεμμένα παιδιά." 
+        },
+        { 
+            title: "House of the Dragon", title_el: "HOTD", year: 2022, country: "USA", genre: "Δράμα", quality: "HD", rating: 5, 
+            actors: "Matt Smith, Emma D'Arcy, Olivia Cooke", director: "Ryan Condal", studio: "HBO", production: "Warner Bros",
+            poster: "HOTD.jpg", link: "movies/hotd.mp4", desc: "Η ιστορία του εμφυλίου πολέμου του Οίκου Ταργκάρυεν, 200 χρόνια πριν τα γεγονότα του Game of Thrones." 
+        },
+
+        { 
+            title: "Knight Rider", title_el: "Ιππότης της Ασφάλτου", year: 1982, country: "USA", genre: "Action", quality: "SD", rating: 5, 
+            actors: "David Hasselhoff, Edward Mulhare, Patricia McPherson", director: "Glen A. Larson", studio: "NBC", production: "Universal TV",
+            poster: "KnightRider.jpg", link: "movies/knight_rider.mp4", desc: "Ο Μάικλ Νάιτ και το εξελιγμένο αυτοκίνητό του, ο ΚΙΤΤ, πολεμούν το έγκλημα και την αδικία σε μια κλασική περιπέτεια." 
+        },
+        { 
+            title: "Law & Order", title_el: "Νόμος και Τάξη", year: 2021, country: "USA", genre: "Εγκλήματος", quality: "HD", rating: 4, 
+            actors: "Christopher Meloni, Mariska Hargitay, Danielle Moné Truitt", director: "Dick Wolf", studio: "NBC", production: "Wolf Entertainment",
+            poster: "LawOrder.jpg", link: "movies/law_order.mp4", desc: "Ο Έλιοτ Στάμπλερ επιστρέφει στην αστυνομία της Νέας Υόρκης για να ηγηθεί μιας μονάδας κατά του οργανωμένου εγκλήματος." 
+        },
+        { 
+            title: "Loki", title_el: "Λόκι", year: 2021, country: "USA", genre: "Δράμα, Sci-Fi", quality: "HD", rating: 5, 
+            actors: "Tom Hiddleston, Owen Wilson, Sophia Di Martino", director: "Michael Waldron", studio: "Disney+", production: "Marvel Studios",
+            poster: "Loki.jpg", link: "movies/loki.mp4", desc: "Μετά τα γεγονότα του Endgame, ο θεός της απάτης βρίσκεται αντιμέτωπος με μια μυστηριώδη οργάνωση χρόνου." 
+        }
+    ];
+
+    movies.sort((a, b) => a.title.localeCompare(b.title, 'el'));
+    let favorites = JSON.parse(localStorage.getItem('yiolo_favs')) || [];
+    let currentCat = "All";
+
+    function toggleTheme() {
+        const root = document.documentElement;
+        if (root.getAttribute('data-theme') === 'light') root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', 'light');
+    }
+
+    function renderMovies(list) {
+        const grid = document.getElementById('movieGrid');
+        grid.innerHTML = list.map(m => {
+            const isFav = favorites.includes(m.title);
+            return `
+            <div class="movie-card" onclick="openDetails('${m.title}')">
+                <div class="quality-tag">${m.quality}</div>
+                <button class="wishlist-btn ${isFav ? 'active' : ''}" onclick="toggleFav('${m.title}', event)">${isFav ? '❤️' : '🤍'}</button>
+                <div class="img-container">
+                    <img src="posters/${m.poster}" onerror="this.src='https://placeholder.com{encodeURIComponent(m.title)}'">
+                </div>
+                <div class="info">
+                    <h3>${m.title}</h3>
+                    <div class="stars">${'★'.repeat(m.rating)}${'☆'.repeat(5-m.rating)}</div>
+                    <a href="${m.link}" class="play-btn" onclick="event.stopPropagation()">ΠΡΟΒΟΛΗ</a>
+                </div>
+            </div>`;
+        }).join('');
+        document.getElementById('movieCount').innerText = `Σύνολο: ${list.length}`;
+    }
+
+    function applyFilters() {
+        const text = document.getElementById('movieSearch').value.toLowerCase();
+        const filtered = movies.filter(m => {
+            const matchText = m.title.toLowerCase().includes(text) || 
+                              (m.title_el && m.title_el.toLowerCase().includes(text)) ||
+                              (m.actors && m.actors.toLowerCase().includes(text)) ||
+                              (m.director && m.director.toLowerCase().includes(text));
+            const matchCat = currentCat === "All" || m.genre.includes(currentCat);
+            return matchText && matchCat;
+        });
+        renderMovies(filtered);
+    }
+
+    function handleCategory(cat) {
+        currentCat = cat;
+        document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.toggle('active', btn.innerText === (cat === 'All' ? 'Όλα' : cat)));
+        applyFilters();
+    }
+
+    function showFavorites() {
+        const filtered = movies.filter(m => favorites.includes(m.title));
+        renderMovies(filtered);
+    }
+
+    function toggleFav(title, e) {
+        e.stopPropagation();
+        if(favorites.includes(title)) favorites = favorites.filter(f => f !== title);
+        else favorites.push(title);
+        localStorage.setItem('yiolo_favs', JSON.stringify(favorites));
+        applyFilters();
+    }
+
+    function openDetails(title) {
+        const m = movies.find(movie => movie.title === title);
+        document.getElementById('modalTitle').innerText = m.title;
+        document.getElementById('modalImg').src = "posters/" + m.poster;
+        document.getElementById('modalImg').onerror = function() { this.src='https://placeholder.com' + encodeURIComponent(m.title); };
+        document.getElementById('modalMeta').innerText = `${m.year} • ${m.country} • ${m.genre} • [${m.quality}]`;
+        document.getElementById('modalStars').innerText = '★'.repeat(m.rating) + '☆'.repeat(5-m.rating);
+        document.getElementById('modalActors').innerText = m.actors;
+        document.getElementById('modalDirector').innerText = m.director;
+        document.getElementById('modalStudio').innerText = m.studio;
+        document.getElementById('modalProd').innerText = m.production;
+        document.getElementById('modalDesc').innerText = m.desc || "Δεν υπάρχει διαθέσιμη περιγραφή.";
+        document.getElementById('modalLink').href = m.link;
+        document.getElementById('detailModal').style.display = "flex";
+    }
+
+    function closeDetails() { document.getElementById('detailModal').style.display = "none"; }
+    window.onclick = e => { if(e.target == document.getElementById('detailModal')) closeDetails(); }
+    
+    renderMovies(movies);
+</script>
+</body>
+</html>
