@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YIOLO Ultimate Database 2026</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #e50914; --bg: #0a0a0a; --card: #141414; 
+            --text: #ffffff; --border: #222; --gold: #ffc107;
+            --input-bg: #1a1a1a; --modal-overlay: rgba(0,0,0,0.95);
+            --series-color: #007bff;
+        }
+        [data-theme="light"] {
+            --bg: #f5f5f5; --card: #ffffff; --text: #1a1a1a; 
+            --border: #ddd; --input-bg: #eeeeee; --modal-overlay: rgba(255,255,255,0.95);
+        }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; overflow-x: hidden; }
+        header { padding: 15px 5%; background: var(--card); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); }
+        .logo { color: var(--primary); font-weight: 800; font-size: 24px; letter-spacing: 1px; }
+        .header-controls { display: flex; align-items: center; gap: 15px; }
+        .theme-btn { background: var(--primary); color: white; border: none; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        #movieCount { font-size: 11px; background: var(--input-bg); padding: 5px 12px; border-radius: 15px; border: 1px solid var(--border); color: #888; }
+        
+        .search-section { padding: 30px 5% 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .search-container { position: relative; width: 100%; max-width: 600px; }
+        #movieSearch { width: 100%; padding: 15px 25px; border-radius: 30px; border: 2px solid var(--border); background: var(--input-bg); color: var(--text); outline: none; font-size: 16px; transition: 0.3s; }
+        #movieSearch:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(229, 9, 20, 0.3); }
+        #movieSearch::-webkit-calendar-picker-indicator { display: none !important; }
+        
+        #sortSelect { padding: 8px 15px; border-radius: 20px; background: var(--card); color: var(--text); border: 1px solid var(--border); cursor: pointer; font-size: 12px; outline: none; }
+
+        .categories { display: flex; justify-content: center; gap: 10px; padding: 10px 5% 30px; flex-wrap: wrap; align-items: center; }
+        .cat-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: 0.3s; outline: none; }
+        .cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .cat-btn-type.active[data-type="Series"] { background: var(--series-color); border-color: var(--series-color); }
+
+        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; padding: 0 5% 50px; }
+        .movie-card { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); transition: 0.3s ease; position: relative; cursor: pointer; display: flex; flex-direction: column; }
+        .movie-card:hover { transform: translateY(-8px); border-color: var(--primary); }
+        
+        .movie-card::after { 
+            content: attr(data-type); position: absolute; top: 40px; left: 10px; 
+            color: white; font-size: 9px; padding: 2px 8px; border-radius: 4px; 
+            font-weight: bold; z-index: 10; text-transform: uppercase; 
+        }
+        .movie-card[data-type="Movie"]::after { background: var(--primary); }
+        .movie-card[data-type="Series"]::after { background: var(--series-color); }
+
+        .img-container { position: relative; overflow: hidden; aspect-ratio: 2/3; background: #1a1a1a; }
+        .movie-card img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+        
+        .quality-tag { position: absolute; top: 10px; left: 10px; color: white; font-size: 9px; font-weight: bold; padding: 3px 6px; border-radius: 4px; z-index: 10; }
+        
+        .wishlist-btn { 
+            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); 
+            border: none; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; 
+            z-index: 11; display: flex; align-items: center; justify-content: center; 
+            font-size: 18px; transition: 0.2s; 
+        }
+        .wishlist-btn:hover { transform: scale(1.1); background: rgba(0,0,0,0.8); }
+        .wishlist-btn.active { background: var(--primary); }
+        
+        .info { padding: 15px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .info h3 { font-size: 13px; margin: 0 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); font-weight: 700; }
+        .stars { color: var(--gold); font-size: 10px; margin-bottom: 10px; }
+        .play-btn { background: var(--primary); color: white; text-decoration: none; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: bold; display: block; text-align: center; }
+
+        #detailModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: var(--modal-overlay); z-index:4000; align-items:center; justify-content:center; backdrop-filter: blur(10px); }
+        .modal-box { background:var(--card); width:95%; max-width:800px; border-radius:24px; position:relative; border:1px solid var(--border); overflow:hidden; display: flex; flex-direction: row; animation: slideUp 0.3s ease; }
+        .modal-poster { width: 40%; object-fit: cover; min-height: 450px; background: #000; }
+        .modal-info { padding: 35px; width: 60%; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; overflow-y: auto; }
+        .modal-info h2 { margin: 0; color: var(--primary); font-size: 28px; }
+        .info-label { color: var(--primary); font-weight: 800; font-size: 12px; text-transform: uppercase; margin-right: 5px; }
+        .info-value { font-size: 14px; opacity: 0.9; }
+        .modal-desc { font-size: 14px; line-height: 1.6; opacity: 0.8; text-align: justify; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 5px; }
+
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @media (max-width: 750px) { .modal-box { flex-direction: column; max-height: 90vh; } .modal-poster { width: 100%; min-height: 200px; } .modal-info { width: 100%; padding: 20px; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">YIOLO</div>
+    <div class="header-controls">
+        <button class="theme-btn" onclick="toggleTheme()">ΘΕΜΑ</button>
+        <div id="movieCount">Σύνολο: 0</div>
+    </div>
+</header>
+
+<div class="search-section">
+    <div class="search-container">
+        <input type="text" id="movieSearch" list="movieOptions" placeholder="Αναζήτηση ταινίας, ηθοποιού, studio..." oninput="applyFilters()">
+        <datalist id="movieOptions"></datalist>
+    </div>
+    <select id="sortSelect" onchange="applyFilters()">
+        <option value="title">Τίτλος (Α-Ω)</option>
+        <option value="yearDesc">Νεότερες πρώτα</option>
+        <option value="yearAsc">Παλαιότερες πρώτα</option>
+        <option value="rating">Βαθμολογία</option>
+    </select>
+</div>
+
+<div class="categories">
+    <button class="cat-btn cat-btn-type active" id="btn-all-type" onclick="handleType('All')">Όλα</button>
+    <button class="cat-btn cat-btn-type" id="btn-movie" onclick="handleType('Movie')">Ταινίες</button>
+    <button class="cat-btn cat-btn-type" id="btn-series" onclick="handleType('Series')">Σειρές</button>
+    <div style="width: 1px; height: 25px; background: var(--border); margin: 0 10px;"></div>
+    <button class="cat-btn active" onclick="handleCategory('All')">Όλα τα είδη</button>
+    <button class="cat-btn" onclick="handleCategory('Κωμωδία')">Κωμωδία</button>
+    <button class="cat-btn" onclick="handleCategory('Δράμα')">Δράμα</button>
+    <button class="cat-btn" onclick="handleCategory('Εγκλήματος')">Crime</button>
+    <button class="cat-btn" onclick="showFavorites()" style="color: #e50914; border-color: #e50914;">Liked</button>
+</div>
+
+<div class="movie-grid" id="movieGrid"></div>
+
+<div id="detailModal">
+    <div class="modal-box">
+        <button onclick="closeDetails()" style="position:absolute; top:15px; right:15px; background:rgba(0,0,0,0.5); border:none; color:white; font-size:24px; cursor:pointer; width:40px; height:40px; border-radius:50%; z-index:10;">&times;</button>
+        <img id="modalImg" class="modal-poster" src="">
+        <div class="modal-info">
+            <h2 id="modalTitle"></h2>
+            <div id="modalStars" style="color:var(--gold); font-size:14px;"></div>
+            <div><span class="info-label">Ηθοποιοί:</span><span id="modalActors" class="info-value"></span></div>
+            <div><span class="info-label">Σκηνοθεσία:</span><span id="modalDirector" class="info-value"></span></div>
+            <div><span class="info-label">Στούντιο:</span><span id="modalStudio" class="info-value"></span></div>
+            <div><span class="info-label">Σενάριο:</span><span id="modalProd" class="info-value"></span></div>
+            <div><span class="info-label">Πληροφορίες:</span><span id="modalMeta" class="info-value"></span></div>
+            <div id="modalDesc" class="modal-desc"></div>
+            <div style="margin-top:auto;"><a id="modalLink" href="#" class="play-btn" style="padding: 12px;">ΠΡΟΒΟΛΗ ΤΩΡΑ</a></div>
+        </div>
+    </div>
+</div>
+
+<script>
+        const movies = [
+        { 
+            title: "1883", year: 2021, duration: "60 min/ep", country: "United States", genre: "Δράμα, Γουέστερν", type: "Series", quality: "HD", rating: 5, 
+            actors: "Sam Elliott, Tim McGraw, Faith Hill, Isabel May", director: "Taylor Sheridan", studio: "Paramount+", production: "Taylor Sheridan",
+            poster: "1883.jpg", link: "https://terabox.com/s/1-xhUKF86FVGqZSNb0TttIA", desc: "Η προϊστορία της οικογένειας Dutton καθώς διασχίζουν τις πεδιάδες προς το τελευταίο προπύργιο της άγριας Αμερικής."
+        },
+        { 
+            title: "1899", year: 2022, duration: "60 min/ep", country: "Germany", genre: "Μυστηρίου, Δράμα", type: "Series", quality: "HD", rating: 4, 
+            actors: "Emily Beecham, Andreas Pietschmann, Aneurin Barnard", director: "Baran bo Odar", studio: "Netflix", production: "Jantje Friese",
+            poster: "1899.jpg", link: "https://terabox.com/s/1a5c8AJjYf13nNHc_N1NZ1A", desc: "Μετανάστες σε ένα ατμόπλοιο που ταξιδεύει προς τη Νέα Υόρκη μπλέκονται σε ένα αινιγματικό μυστήριο στον ανοιχτό ωκεανό."
+        },
+        { 
+            title: "1923", year: 2022, duration: "60 min/ep", country: "United States", genre: "Δράμα, Γουέστερν", type: "Series", quality: "HD", rating: 5, 
+            actors: "Harrison Ford, Helen Mirren, Brandon Sklenar", director: "Ben Richardson", studio: "Paramount+", production: "Taylor Sheridan",
+            poster: "1923.jpg", link: "https://terabox.com/s/1ulXsA68v8lxNUBU8s6nw8A", desc: "Μια νέα γενιά της οικογένειας Dutton αντιμετωπίζει τις δυσκολίες των αρχών του 20ου αιώνα."
+        },
+        { 
+            title: "Alaska Daily", year: 2022, duration: "45 min/ep", country: "United States", genre: "Δράμα, Εγκλήματος", type: "Series", quality: "HD", rating: 4, 
+            actors: "Hilary Swank, Jeff Perry, Matt Malloy", director: "Tom McCarthy", studio: "ABC", production: "Tom McCarthy",
+            poster: "alaska_daily.jpg", link: "https://terabox.com/s/1yjvZzZ9eU-68tYUbQrcnow", desc: "Μια δημοσιογράφος μετακομίζει στην Αλάσκα για να ερευνήσει μια σειρά από ανεξιχνίαστες εξαφανίσεις."
+        },
+        { 
+            title: "American Horror Stories", year: 2021, duration: "45 min/ep", country: "United States", genre: "Δράμα, Μυστηρίου", type: "Series", quality: "HD", rating: 3, 
+            actors: "Sierra McCormick, Paris Jackson, Merrin Dungey", director: "Max Winkler", studio: "Hulu", production: "Ryan Murphy",
+            poster: "ahs.jpg", link: "https://terabox.com/s/1BjfKWYHcibZ-SDdyQleOYA", desc: "Σειρά ανθολογίας που εξερευνά τρομακτικούς μύθους και θρύλους σε κάθε επεισόδιο."
+        },
+        { 
+            title: "Χίλια Χτυπήματα", year: 2025, duration: "50 min/ep", country: "United Kingdom", genre: "Δράμα", type: "Series", quality: "HD", rating: 4, 
+            actors: "Malachi Kirby, Erin Doherty, James Nelson-Joyce", director: "Ashley Walters", studio: "Disney+", production: "Steven Knight",
+            poster: "thousand_blows.jpg", link: "https://1024terabox.com/s/1wkU10L1jL8vCPsdlM5XrlQ", desc: "Μια σκληρή ματιά στον κόσμο της παράνομης πυγμαχίας στο βικτοριανό Λονδίνο."
+        },
+        { 
+            title: "Άννα με Α", year: 2017, duration: "45 min/ep", country: "Canada", genre: "Δράμα, Οικογενειακή", type: "Series", quality: "HD", rating: 5, 
+            actors: "Amybeth McNulty, Geraldine James, R.H. Thomson", director: "Paul Fox", studio: "CBC/Netflix", production: "Moira Walley-Beckett",
+            poster: "anne.jpg", link: "https://terabox.com/s/1mtfftulrQuClwoX0tZaRlg", desc: "Οι περιπέτειες ενός ορφανού κοριτσιού που αλλάζει τις ζωές δύο αδελφών σε μια μικρή πόλη."
+        },
+        { 
+            title: "Around the World in 80 Days", year: 2021, duration: "50 min/ep", country: "Belgium", genre: "Οικογενειακή, Δράμα", type: "Series", quality: "HD", rating: 4, 
+            actors: "David Tennant, Leonie Benesch, Ibrahim Koma", director: "Steve Barron", studio: "La Une", production: "Jules Verne (Novel)",
+            poster: "80days.jpg", link: "https://terabox.com/s/1QMlAWXhqkDyvUtQN9LaJCg", desc: "Ο Φιλέας Φογκ προσπαθεί να κερδίσει το στοίχημα και να γυρίσει τον κόσμο σε 80 ημέρες."
+        },
+        { 
+            title: "Άβαταρ: Ο Τελευταίος Μαχητής του Ανέμου", year: 2024, duration: "55 min/ep", country: "United States", genre: "Δράμα", type: "Series", quality: "HD", rating: 4, 
+            actors: "Gordon Cormier, Kiawentiio, Ian Ousley", director: "Jabbar Raisani", studio: "Netflix", production: "Albert Kim",
+            poster: "avatar.jpg", link: "#", desc: "Ένα νεαρό αγόρι, ο Άανγκ, πρέπει να δαμάσει τα τέσσερα στοιχεία για να σώσει τον κόσμο."
+        },
+        { 
+            title: "Balthazar", year: 2018, duration: "52 min/ep", country: "France", genre: "Εγκλήματος", type: "Series", quality: "HD", rating: 4, 
+            actors: "Tomer Sisley, Philypa Phoenix, Yannig Samot", director: "Vincent Jamain", studio: "TF1", production: "Clothilde Jamin",
+            poster: "balthazar.jpg", link: "#", desc: "Ένας χαρισματικός ιατροδικαστής βοηθά την αστυνομία να λύσει τις πιο δύσκολες υποθέσεις στο Παρίσι."
+        },
+        { 
+            title: "Μην Είδατε τον Παναή;", year: 1962, duration: "82 min", country: "Greece", genre: "Κωμωδία", type: "Movie", quality: "SD", rating: 5, 
+            actors: "Thanasis Veggos, Andreas Barkoulis, Hristina Apostolou", director: "Orestis Laskos", studio: "Kostas Strantzalis", production: "Napoleon Eleftheriou",
+            poster: "panais.jpg", link: "#", desc: "Κλασική ελληνική κωμωδία με τον Θανάση Βέγγο."
+        },
+        { 
+            title: "Ένας Βλάκας Και Μισός", year: 1959, duration: "86 min", country: "Greece", genre: "Κωμωδία", type: "Movie", quality: "SD", rating: 5, 
+            actors: "Christos Efthimiou, Dionysis Papagiannopoulos, Andreas Barkoulis", director: "Giannis Dalianidis", studio: "Afoi Roussopoulloi", production: "Dimitris Psathas",
+            poster: "vlakas.jpg", link: "#", desc: "Ένας αγαθός άνθρωπος πέφτει θύμα εκμετάλλευσης."
+        },
+        { 
+            title: "Το Καταφύγιο", year: 2026, duration: "115 min", country: "United Kingdom", genre: "Δράσης, Εγκλήματος, Θρίλερ", type: "Movie", quality: "HD", rating: 5, 
+            actors: "Jason Statham, Bodhi Rae Breathnach, Bill Nighy", director: "Ric Roman Waugh", studio: "Black Bear Pictures", production: "Ward Parry",
+            poster: "shelter.jpg", link: "#", desc: "Μια οικογένεια αναζητά σωτηρία σε ένα υπερσύγχρονο καταφύγιο."
+        },
+        { 
+            title: "Θα κάνω πέτρα την καρδιά μου", year: 1968, duration: "98 min", country: "Greece", genre: "Δράμα", type: "Movie", quality: "SD", rating: 4, 
+            actors: "Tolis Voskopoulos, Doukissa, Manos Katrakis", director: "Kostas Doukas", studio: "-", production: "Nikos Economopoulos",
+            poster: "kardia.jpg", link: "#", desc: "Δραματική μουσική ταινία με τον Τόλη Βοσκόπουλο."
+        },
+        { 
+            title: "The Choral", year: 2025, duration: "105 min", country: "United Kingdom", genre: "Κωμωδία, Δράμα, Μουσική", type: "Movie", quality: "HD", rating: 5, 
+            actors: "Ralph Fiennes, Roger Allam, Mark Addy", director: "Nicholas Hytner", studio: "Sony Pictures Classics", production: "Alan Bennett",
+            poster: "choral.jpg", link: "#", desc: "Η ιστορία μιας χορωδίας ανδρών κατά τον Α' Παγκόσμιο Πόλεμο."
+        },
+        { 
+            title: "Cross", year: 2024, duration: "~55 min/ep", country: "United States", genre: "Εγκλήματος, Δράμα, Μυστηρίου", type: "Series", quality: "HD", rating: 5, 
+            actors: "Aldis Hodge, Isaiah Mustafa, Juanita Jennings", director: "Stacey Muhammad", studio: "Prime Video", production: "Ben Watkins",
+            poster: "cross.jpg", link: "#", desc: "Σειρά μυστηρίου με τον ντετέκτιβ Alex Cross."
+        }
+    ];
+
+
+    let favorites = JSON.parse(localStorage.getItem('yiolo_favs')) || [];
+    let currentCat = "All";
+    let currentType = "All";
+
+    function toggleTheme() {
+        const root = document.documentElement;
+        if (root.getAttribute('data-theme') === 'light') root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', 'light');
+    }
+
+    function setupAutoSuggest() {
+        const dataList = document.getElementById('movieOptions');
+        const options = movies.map(m => `<option value="${m.title}">`).join('');
+        dataList.innerHTML = options;
+    }
+
+    function renderMovies(list) {
+        const grid = document.getElementById('movieGrid');
+        grid.innerHTML = list.map(m => {
+            const isFav = favorites.includes(m.title);
+            const qColor = m.quality === 'HD' ? '#2ecc71' : '#7f8c8d';
+            return `
+            <div class="movie-card" data-type="${m.type}" onclick="openDetails('${m.title}')">
+                <div class="quality-tag" style="background: ${qColor}">${m.quality}</div>
+                <button class="wishlist-btn ${isFav ? 'active' : ''}" onclick="toggleFav('${m.title}', event)">
+                    ${isFav ? '❤️' : '🤍'}
+                </button>
+                <div class="img-container">
+                    <img src="posters/${m.poster}" onerror="this.src='https://placeholder.com{encodeURIComponent(m.title)}'">
+                </div>
+                <div class="info">
+                    <h3>${m.title}</h3>
+                    <div class="stars">${'★'.repeat(m.rating)}${'☆'.repeat(5-m.rating)}</div>
+                    <a href="${m.link}" class="play-btn" onclick="event.stopPropagation()">ΠΡΟΒΟΛΗ</a>
+                </div>
+            </div>`;
+        }).join('');
+        document.getElementById('movieCount').innerText = `Σύνολο: ${list.length}`;
+    }
+
+    function applyFilters() {
+        const text = document.getElementById('movieSearch').value.toLowerCase();
+        const sortBy = document.getElementById('sortSelect').value;
+
+        let filtered = movies.filter(m => {
+            const matchText = m.title.toLowerCase().includes(text) || 
+                              (m.actors && m.actors.toLowerCase().includes(text)) ||
+                              (m.director && m.director.toLowerCase().includes(text)) ||
+                              (m.studio && m.studio.toLowerCase().includes(text));
+            const matchCat = currentCat === "All" || m.genre.includes(currentCat);
+            const matchType = currentType === "All" || m.type === currentType;
+            return matchText && matchCat && matchType;
+        });
+
+        filtered.sort((a, b) => {
+            if (sortBy === "title") return a.title.localeCompare(b.title, 'el');
+            if (sortBy === "yearDesc") return b.year - a.year;
+            if (sortBy === "yearAsc") return a.year - b.year;
+            if (sortBy === "rating") return b.rating - a.rating;
+            return 0;
+        });
+
+        renderMovies(filtered);
+    }
+
+    function handleType(type) {
+        currentType = type;
+        document.getElementById('btn-all-type').classList.toggle('active', type === 'All');
+        document.getElementById('btn-movie').classList.toggle('active', type === 'Movie');
+        document.getElementById('btn-series').classList.toggle('active', type === 'Series');
+        applyFilters();
+    }
+
+    function handleCategory(cat) {
+        currentCat = cat;
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+            if(!btn.classList.contains('cat-btn-type')) {
+                btn.classList.toggle('active', btn.innerText.includes(cat === 'All' ? 'Όλα τα είδη' : cat));
+            }
+        });
+        applyFilters();
+    }
+
+    function showFavorites() {
+        const filtered = movies.filter(m => favorites.includes(m.title));
+        renderMovies(filtered);
+    }
+
+    function toggleFav(title, e) {
+        e.stopPropagation();
+        if(favorites.includes(title)) favorites = favorites.filter(f => f !== title);
+        else favorites.push(title);
+        localStorage.setItem('yiolo_favs', JSON.stringify(favorites));
+        applyFilters();
+    }
+
+    function openDetails(title) {
+        const m = movies.find(movie => movie.title === title);
+        document.getElementById('modalTitle').innerText = m.title;
+        document.getElementById('modalImg').src = "posters/" + m.poster;
+        document.getElementById('modalImg').onerror = function() { this.src='https://placeholder.com' + encodeURIComponent(m.title); };
+        document.getElementById('modalMeta').innerText = `${m.year} • ${m.duration} • ${m.country} • ${m.genre} • [${m.quality}]`;
+        document.getElementById('modalStars').innerText = '★'.repeat(m.rating) + '☆'.repeat(5-m.rating);
+        document.getElementById('modalActors').innerText = m.actors;
+        document.getElementById('modalDirector').innerText = m.director;
+        document.getElementById('modalStudio').innerText = m.studio;
+        document.getElementById('modalProd').innerText = m.production;
+        document.getElementById('modalDesc').innerText = m.desc;
+        document.getElementById('modalLink').href = m.link;
+        document.getElementById('detailModal').style.display = "flex";
+    }
+
+    function closeDetails() { document.getElementById('detailModal').style.display = "none"; }
+    window.onclick = e => { if(e.target == document.getElementById('detailModal')) closeDetails(); }
+    
+    setupAutoSuggest();
+    applyFilters();
+</script>
+</body>
+</html>
