@@ -46,16 +46,32 @@
     font-size: 28px;
     background: none;
     border: none;
-    color: var(--text);
+    color: var(--primary); /* Το κάνει κόκκινο για να ξεχωρίζει */
     cursor: pointer;
+    z-index: 1100; /* Για να είναι πάνω από όλα */
+    padding: 10px;
 }
+
 
 /* Ρυθμίσεις για κινητά */
 @media (max-width: 768px) {
-    header {
-        position: relative; /* Διασφαλίζει ότι το header μένει πάνω */
-        z-index: 1001;
+    .hamburger { 
+        display: block !important; /* Το αναγκάζει να εμφανιστεί */
     }
+
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+}
+
     
     .search-section {
         position: absolute; /* Για να μην σπρώχνει όλη τη σελίδα */
