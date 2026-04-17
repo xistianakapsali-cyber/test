@@ -40,6 +40,32 @@
 
 		
         select { padding: 8px 15px; border-radius: 20px; background: var(--card); color: var(--text); border: 1px solid var(--border); cursor: pointer; font-size: 12px; outline: none; }
+		/* Κρύβουμε το hamburger στο desktop */
+.hamburger {
+    display: none;
+    font-size: 28px;
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+}
+
+/* Ρυθμίσεις για κινητά */
+@media (max-width: 768px) {
+    .hamburger { display: block; }
+
+    .search-section {
+        display: none; /* Αρχικά κρυφό στο κινητό */
+        flex-direction: column;
+        width: 100%;
+    }
+
+    /* Όταν είναι ενεργό, το εμφανίζουμε */
+    .search-section.active {
+        display: flex;
+    }
+}
+
      @media (max-width: 600px) {
     .filter-group select { flex: 1; min-width: 120px; }
 }
@@ -134,11 +160,13 @@
 <body>
 
 <header>
-    <div class="logo">YIOLO</div>
     <div class="header-controls">
-        <button class="theme-btn" onclick="toggleTheme()">ΘΕΜΑ</button>
-        <div id="movieCount">Σύνολο: 0</div>
-    </div>
+    <!-- Το νέο κουμπί Hamburger -->
+    <button class="hamburger" onclick="toggleMenu()">☰</button>
+    <button class="theme-btn" onclick="toggleTheme()">ΘΕΜΑ</button>
+    <div id="movieCount">Σύνολο: 0</div>
+</div>
+
 </header>
 
 <div class="search-section">
@@ -716,10 +744,11 @@
     let currentPage = 1;
     const itemsPerPage = 40;
 
-    function toggleTheme() {
-        const root = document.documentElement;
-        root.hasAttribute('data-theme') ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', 'light');
-    }
+    function toggleMenu() {
+    const searchSection = document.querySelector('.search-section');
+    searchSection.classList.toggle('active');
+}
+
 
     function setupFilters() {
         const yearSelect = document.getElementById('yearFilter');
