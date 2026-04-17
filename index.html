@@ -52,19 +52,20 @@
 
 /* Ρυθμίσεις για κινητά */
 @media (max-width: 768px) {
-    .hamburger { display: block; }
-
-    .search-section {
-        display: none; /* Αρχικά κρυφό στο κινητό */
-        flex-direction: column;
-        width: 100%;
+    header {
+        position: relative; /* Διασφαλίζει ότι το header μένει πάνω */
+        z-index: 1001;
     }
-
-    /* Όταν είναι ενεργό, το εμφανίζουμε */
-    .search-section.active {
-        display: flex;
+    
+    .search-section {
+        position: absolute; /* Για να μην σπρώχνει όλη τη σελίδα */
+        top: 60px;
+        left: 0;
+        z-index: 1000;
+        background: var(--card); /* Παίρνει το χρώμα του θέματος */
     }
 }
+
 
      @media (max-width: 600px) {
     .filter-group select { flex: 1; min-width: 120px; }
@@ -744,10 +745,16 @@
     let currentPage = 1;
     const itemsPerPage = 40;
 
-    function toggleMenu() {
+    function toggleTheme() {
+    const root = document.documentElement;
+    root.hasAttribute('data-theme') ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', 'light');
+}
+
+function toggleMenu() {
     const searchSection = document.querySelector('.search-section');
     searchSection.classList.toggle('active');
 }
+
 
 
     function setupFilters() {
