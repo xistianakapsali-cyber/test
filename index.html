@@ -40,49 +40,6 @@
 
 		
         select { padding: 8px 15px; border-radius: 20px; background: var(--card); color: var(--text); border: 1px solid var(--border); cursor: pointer; font-size: 12px; outline: none; }
-		/* Κρύβουμε το hamburger στο desktop */
-.hamburger {
-    display: none;
-    font-size: 28px;
-    background: none;
-    border: none;
-    color: var(--primary); /* Το κάνει κόκκινο για να ξεχωρίζει */
-    cursor: pointer;
-    z-index: 1100; /* Για να είναι πάνω από όλα */
-    padding: 10px;
-}
-
-
-/* Ρυθμίσεις για κινητά */
-@media (max-width: 768px) {
-    .hamburger { 
-        display: block !important; /* Το αναγκάζει να εμφανιστεί */
-    }
-
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .header-controls {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-}
-
-    
-    .search-section {
-        position: absolute; /* Για να μην σπρώχνει όλη τη σελίδα */
-        top: 60px;
-        left: 0;
-        z-index: 1000;
-        background: var(--card); /* Παίρνει το χρώμα του θέματος */
-    }
-}
-
-
      @media (max-width: 600px) {
     .filter-group select { flex: 1; min-width: 120px; }
 }
@@ -177,13 +134,11 @@
 <body>
 
 <header>
+    <div class="logo">YIOLO</div>
     <div class="header-controls">
-    <!-- Το νέο κουμπί Hamburger -->
-    <button class="hamburger" onclick="toggleMenu()">☰</button>
-    <button class="theme-btn" onclick="toggleTheme()">ΘΕΜΑ</button>
-    <div id="movieCount">Σύνολο: 0</div>
-</div>
-
+        <button class="theme-btn" onclick="toggleTheme()">ΘΕΜΑ</button>
+        <div id="movieCount">Σύνολο: 0</div>
+    </div>
 </header>
 
 <div class="search-section">
@@ -762,16 +717,9 @@
     const itemsPerPage = 40;
 
     function toggleTheme() {
-    const root = document.documentElement;
-    root.hasAttribute('data-theme') ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', 'light');
-}
-
-function toggleMenu() {
-    const searchSection = document.querySelector('.search-section');
-    searchSection.classList.toggle('active');
-}
-
-
+        const root = document.documentElement;
+        root.hasAttribute('data-theme') ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', 'light');
+    }
 
     function setupFilters() {
         const yearSelect = document.getElementById('yearFilter');
