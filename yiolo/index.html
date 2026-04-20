@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="el">
 <head>
 <meta charset="UTF-8">
@@ -18,7 +18,11 @@ header { padding: 15px 5%; background: var(--card); position: sticky; top: 0; z-
 .filter-type-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 #movieCount { font-size: 12px; background: var(--input-bg); padding: 5px 12px; border-radius: 15px; border: 1px solid var(--border); }
 .search-section { padding: 30px 5% 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-#movieSearch { width: 100%; max-width: 600px; padding: 15px 25px; border-radius: 30px; border: 2px solid var(--border); background: var(--input-bg); color: var(--text); outline: none; font-size: 16px; }
+.search-wrapper { position: relative; width: 100%; max-width: 600px; margin: 0 auto; }
+#movieSearch { width: 100%; padding: 15px 45px 15px 25px; border-radius: 30px; border: 2px solid var(--border); background: var(--input-bg); color: var(--text); outline: none; font-size: 16px; }
+.clear-search-btn { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; opacity: 0.6; transition: all 0.2s; }
+.clear-search-btn:hover { opacity: 1; background: rgba(229,9,20,0.1); color: var(--primary); }
+.clear-search-btn.hidden { display: none; }
 .filter-group { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin: 20px 0; }
 .filter-group select { padding: 10px 20px; border-radius: 25px; background: var(--card); color: var(--text); border: 1px solid var(--border); cursor: pointer; font-size: 14px; min-width: 150px; }
 .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; padding: 20px 5%; width: 100%; box-sizing: border-box; margin-left: 280px; transition: margin-left 0.3s ease; }
@@ -148,7 +152,10 @@ header { padding: 15px 5%; background: var(--card); position: sticky; top: 0; z-
 </div>
 
 <div class="search-section">
-    <input type="text" id="movieSearch" placeholder="Αναζήτηση τίτλου, ηθοποιού, σκηνοθέτη..." oninput="applyFilters()">
+    <div class="search-wrapper">
+        <input type="text" id="movieSearch" placeholder="🔍 Αναζήτηση τίτλου, ηθοποιού, σκηνοθέτη...">
+        <button class="clear-search-btn hidden" id="clearSearchBtn" onclick="clearSearch()" title="Εκκαθάριση αναζήτησης">✕</button>
+    </div>
     <div class="filter-group">
         <select id="genreFilter" onchange="applyFilters()"><option value="All">Όλες οι Κατηγορίες</option></select>
         <select id="sortSelect" onchange="applyFilters()">
@@ -195,7 +202,7 @@ const TMDB_BASE_IMG = "https://image.tmdb.org/t/p/w500";
 const posterCache = new Map();
 const LOADING_POSTER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='450' viewBox='0 0 300 450'%3E%3Crect width='300' height='450' fill='%231a1a1a'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23666' font-size='14'%3EΦΟΡΤΩΣΗ...%3C/text%3E%3C/svg%3E";
 
-// ============ ΠΡΩΤΑ 100 ΔΕΔΟΜΕΝΑ ΕΝΣΩΜΑΤΩΜΕΝΑ ============
+// ============ ΕΝΣΩΜΑΤΩΜΕΝΑ ΔΕΔΟΜΕΝΑ (πρώτοι 3 για παράδειγμα) ============
 const EMBEDDED_MOVIES = [
   { "id": 1, "title": "1883", "year": 2021, "country": "United States", "genre": "Δράμα, Γουέστερν", "type": "Series", "quality": "HD", "rating": 8.7, "actors": "Sam Elliott, Tim McGraw, Faith Hill, Isabel May, LaMonica Garrett", "director": "Ben Richardson, Christina Alexandra Voros, Taylor Sheridan", "writer": "", "link": "https://terabox.com/s/1-xhUKF86FVGqZSNb0TttIA", "imdb": "https://www.imdb.com/title/tt13756662/", "tmdb": "https://www.themoviedb.org/tv/118357", "desc": "Η ιστορία της οικογένειας Ντάτον καθώς ξεκινούν ένα ταξίδι δυτικά...", "dateAdded": "2023-02-14" },
   { "id": 2, "title": "1899", "year": 2022, "country": "Germany", "genre": "Μυστηρίου, Δράμα", "type": "Series", "quality": "HD", "rating": 7.3, "actors": "Emily Beecham, Andreas Pietschmann, Aneurin Barnard, Isabella Wei, Maciej Musiał", "director": "Baran bo Odar", "writer": "Jantje Friese", "link": "https://terabox.com/s/1a5c8AJjYf13nNHc_N1NZ1A", "imdb": "https://www.imdb.com/title/tt9319668/", "tmdb": "https://www.themoviedb.org/tv/90669", "desc": "Μετανάστες από διαφορετικές χώρες ταξιδεύουν...", "dateAdded": "2023-02-15" },
@@ -207,12 +214,10 @@ let filteredMovies = [];
 let currentPage = 1;
 const itemsPerPage = 20;
 let currentTypeFilter = 'all';
-let isLoading = true;
 
-// ============ ΦΟΡΤΩΣΗ ΔΕΔΟΜΕΝΩΝ ΑΠΟ JSON ============
+// ============ ΦΟΡΤΩΣΗ ΔΕΔΟΜΕΝΩΝ ============
 async function loadMoviesData() {
     try {
-        // Προσπάθησε να φορτώσεις από το εξωτερικό JSON
         const response = await fetch('movies_data.json');
         if (response.ok) {
             const data = await response.json();
@@ -226,20 +231,17 @@ async function loadMoviesData() {
             throw new Error('File not found');
         }
     } catch (e) {
-        console.log('⚠️ Χρήση ενσωματωμένων δεδομένων (100 τίτλοι)');
+        console.log('⚠️ Χρήση ενσωματωμένων δεδομένων');
         moviesData = [...EMBEDDED_MOVIES];
     }
     
-    // Έλεγχος localStorage για poster overrides
     const saved = localStorage.getItem('yioio_movies_data');
     if (saved) {
         try {
             const savedData = JSON.parse(saved);
             if (savedData.length > moviesData.length) {
                 moviesData = savedData;
-                console.log('📀 Φορτώθηκαν από localStorage:', moviesData.length);
             } else {
-                // Συγχώνευση poster overrides
                 const posterMap = new Map();
                 savedData.forEach(m => { if (m.posterOverride) posterMap.set(m.id, m.posterOverride); });
                 moviesData.forEach(m => { if (posterMap.has(m.id)) m.posterOverride = posterMap.get(m.id); });
@@ -526,18 +528,54 @@ function initFilters() {
     genres.forEach(g => genreSel.add(new Option(g.trim(), g.trim())));
 }
 
+function toggleClearButton() {
+    const searchInput = document.getElementById('movieSearch');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (searchInput.value.length > 0) {
+        clearBtn.classList.remove('hidden');
+    } else {
+        clearBtn.classList.add('hidden');
+    }
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('movieSearch');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    searchInput.value = '';
+    clearBtn.classList.add('hidden');
+    applyFilters();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function applyFilters() {
     if (!moviesData.length) return;
     
-    const search = document.getElementById('movieSearch').value.toLowerCase();
+    toggleClearButton();
+    
+    let searchTerm = document.getElementById('movieSearch').value.toLowerCase().trim();
     let results = [...moviesData];
     
-    if (search) {
-        results = results.filter(m => m.title.toLowerCase().includes(search) ||
-            (m.actors && m.actors.toLowerCase().includes(search)) ||
-            (m.director && m.director.toLowerCase().includes(search)));
+    // ============ ΒΕΛΤΙΩΜΕΝΗ ΑΝΑΖΗΤΗΣΗ ============
+    if (searchTerm) {
+        const searchWords = searchTerm.split(/\s+/);
+        
+        results = results.filter(movie => {
+            const searchableText = [
+                movie.title,
+                movie.original_title || '',
+                movie.actors || '',
+                movie.director || '',
+                movie.writer || '',
+                movie.genre || '',
+                movie.country || '',
+                movie.desc || ''
+            ].join(' ').toLowerCase();
+            
+            return searchWords.every(word => searchableText.includes(word));
+        });
     }
     
+    // Φίλτρα
     if (currentTypeFilter !== 'all') {
         results = results.filter(m => m.type === currentTypeFilter);
     }
@@ -557,6 +595,7 @@ function applyFilters() {
         results = results.filter(m => m.country === countryFilter);
     }
     
+    // Ταξινόμηση
     const sortBy = document.getElementById('sortSelect').value;
     if (sortBy === 'title') {
         results.sort((a, b) => a.title.localeCompare(b.title));
@@ -573,9 +612,10 @@ function applyFilters() {
     filteredMovies = results;
     currentPage = 1;
     
-    let countText = `Τίτλοι: ${filteredMovies.length}`;
-    if (currentTypeFilter === 'Movie') countText = `Ταινίες: ${filteredMovies.length}`;
-    else if (currentTypeFilter === 'Series') countText = `Σειρές: ${filteredMovies.length}`;
+    let countText = `📊 ${filteredMovies.length} τίτλοι`;
+    if (searchTerm) countText += ` (αναζήτηση: "${searchTerm}")`;
+    if (currentTypeFilter === 'Movie') countText = `🎬 Ταινίες: ${filteredMovies.length}`;
+    else if (currentTypeFilter === 'Series') countText = `📺 Σειρές: ${filteredMovies.length}`;
     document.getElementById('movieCount').innerText = countText;
     
     updateDashboard();
@@ -586,9 +626,18 @@ async function renderMovies() {
     const grid = document.getElementById('movieGrid');
     const end = currentPage * itemsPerPage;
     const pageItems = filteredMovies.slice(0, end);
+    const searchTerm = document.getElementById('movieSearch').value.trim();
     
     if (pageItems.length === 0) {
-        grid.innerHTML = '<div style="text-align: center; padding: 50px;">Δεν βρέθηκαν τίτλοι</div>';
+        grid.innerHTML = `
+            <div style="text-align: center; padding: 50px;">
+                🔍 Δεν βρέθηκαν αποτελέσματα για "${searchTerm || 'αυτά τα κριτήρια'}"
+                <br><br>
+                <button onclick="clearSearch()" 
+                        style="padding:10px 20px; background:var(--primary); color:white; border:none; border-radius:25px; cursor:pointer;">
+                    🧹 Εκκαθάριση αναζήτησης
+                </button>
+            </div>`;
         document.getElementById('loadMoreBtn').style.display = 'none';
         return;
     }
@@ -775,6 +824,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     loadTheme();
     await loadMoviesData();
     loadDashboardState();
+    
+    // Event listeners για αναζήτηση
+    const searchInput = document.getElementById('movieSearch');
+    searchInput.addEventListener('input', function() {
+        toggleClearButton();
+        applyFilters();
+    });
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
     
     const backBtn = document.getElementById('backToTop');
     window.addEventListener('scroll', () => {
